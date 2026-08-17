@@ -1,10 +1,10 @@
 {
-  "provider": "ieti-agents",
-  "model": "active-model",
-  "baseURL": "https://agents.ieti.site/v1",
+  "provider": "openai",
+  "model": "gpt-4",
+  "baseURL": "",
   "context": 65536,
   "output": 8192,
-  "reasoning": true,
+  "reasoning": false,
   "timeout": 300000,
   "maxRetries": 2
 }

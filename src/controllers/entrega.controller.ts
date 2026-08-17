@@ -3,6 +3,13 @@ import { entregaService } from '../services/entrega.service';
 import { practicaService } from '../services/practica.service';
 import { resultatCriteriService } from '../services/resultat.service';
 import { z } from 'zod';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { rm } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
+const execAsync = promisify(exec);
 
 const submitSchema = z.object({
   practicaId: z.string(),
@@ -53,5 +60,33 @@ export const getLlistatEntregues = async (req: Request, res: Response) => {
     return res.json(entregues);
   } catch {
     return res.status(500).json({ error: 'Error intern' });
+  }
+};
+
+export const validarEntrega = async (req: Request, res: Response) => {
+  let repoPath: string | null = null;
+  try {
+    const { id } = req.params;
+    const { repositoryUrl } = req.body;
+
+    if (!repositoryUrl) {
+      return res.status(400).json({ error: 'Cal indicar repositoryUrl' });
+    }
+
+    const tmpDir = join(tmpdir(), `revisor-${Date.now()}`);
+    repoPath = tmpDir;
+
+    await execAsync(`git clone ${repositoryUrl} ${tmpDir}`);
+
+    const entregaValidada = await entregaService.validarEntrega(id, tmpDir);
+
+    await rm(repoPath, { recursive: true, force: true });
+
+    return res.json(entregaValidada);
+  } catch (error: any) {
+    if (repoPath) {
+      await rm(repoPath, { recursive: true, force: true });
+    }
+    return res.status(500).json({ error: error.message || 'Error en validacio' });
   }
 };

@@ -7,6 +7,9 @@ dist/
 # Database
 *.db
 
+# Secrets
+.github-token
+
 # Environment
 .env
 .env.local

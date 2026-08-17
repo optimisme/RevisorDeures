@@ -17,32 +17,48 @@ model User {
   updatedAt DateTime  @updatedAt
 }
 
-model Practice {
+model Practica {
   id          String       @id @default(cuid())
-  title       String
-  description String?
-  criteria    Criteria[]
-  submissions Submission[]
+  nom         String
+  descripcio  String?
+  criteri     Criteri[]
+  entrega     Entrega[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
 
-model Criteria {
+model Criteri {
   id          String      @id @default(cuid())
-  name        String
-  description String?
-  practice    Practice    @relation(fields: [practiceId], references: [id])
-  practiceId  String
+  text        String
+  posicio     Int
+  practica    Practica    @relation(fields: [practicaId], references: [id])
+  practicaId  String
+  resultat    ResultatCriteri[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
 
-model Submission {
-  id          String      @id @default(cuid())
-  repositoryUrl String
-  status      String      @default("PENDING")
-  practice    Practice    @relation(fields: [practiceId], references: [id])
-  practiceId  String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+model Entrega {
+  id          String           @id @default(cuid())
+  urlRepo     String
+  estat       String           @default("PENDING")
+  practica    Practica         @relation(fields: [practicaId], references: [id])
+  practicaId  String
+  resultats   ResultatCriteri[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ResultatCriteri {
+  id           String   @id @default(cuid())
+  status       String   @default("NEEDS_REVIEW")
+  feedback     String?
+  evidencia    String?
+  estatTecnic  String?
+  entrega      Entrega  @relation(fields: [entregaId], references: [id])
+  entregaId    String
+  criteri      Criteri  @relation(fields: [criteriId], references: [id])
+  criteriId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

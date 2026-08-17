@@ -49,3 +49,5 @@ export class ResultatCriteriService {
     });
   }
 }
+
+export const resultatCriteriService = new ResultatCriteriService();

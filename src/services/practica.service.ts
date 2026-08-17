@@ -75,3 +75,5 @@ export class PracticaService {
     });
   }
 }
+
+export const practicaService = new PracticaService();

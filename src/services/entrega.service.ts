@@ -47,3 +47,5 @@ export class EntregaService {
     });
   }
 }
+
+export const entregaService = new EntregaService();

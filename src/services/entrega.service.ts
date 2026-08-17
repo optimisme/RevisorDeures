@@ -2,6 +2,7 @@ import prisma from './prisma';
 import { entregaSchema } from '../validations/schemas';
 import { openCodeRuntimeService } from './openCodeRuntime';
 import { resultatCriteriService } from './resultat.service';
+import { Logger } from '../utils/logger';
 
 export interface EntregaCreateInput {
   urlRepo: string;
@@ -12,6 +13,7 @@ export interface EntregaCreateInput {
 export class EntregaService {
   async crear(dades: EntregaCreateInput) {
     const validacio = entregaSchema.parse(dades);
+    Logger.info('Creant nova entrega', { urlRepo: dades.urlRepo });
     return prisma.entrega.create({
       data: {
         ...validacio,
@@ -59,11 +61,13 @@ export class EntregaService {
       throw new Error('Entrega no trobada');
     }
 
+    Logger.info('Iniciant validacio entrega', { entregaId });
     await this.actualitzarEstat(entregaId, 'VALIDATING');
 
     const resultats = [];
 
     for (const criteri of entrega.practica.criteri) {
+      Logger.debug('Validant criteri', { criteriId: criteri.id, entregaId });
       const resultat = await openCodeRuntimeService.runReview(
         repoPath,
         criteri.text,
@@ -82,6 +86,7 @@ export class EntregaService {
       );
 
       resultats.push(resultat);
+      Logger.info(`Criteri ${criteri.id} validat`, { status: resultat.status });
     }
 
     const teFail = resultats.some((r) => r.status === 'FAIL');
@@ -93,6 +98,7 @@ export class EntregaService {
 
     await this.actualitzarEstat(entregaId, estatFinal);
 
+    Logger.info('Validacio entrega completada', { entregaId, estatFinal });
     return this.obtenir(entregaId);
   }
 }

@@ -1,1 +1,10 @@
-[ts]
+{
+  "provider": "ieti-agents",
+  "model": "active-model",
+  "baseURL": "https://agents.ieti.site/v1",
+  "context": 65536,
+  "output": 8192,
+  "reasoning": true,
+  "timeout": 300000,
+  "maxRetries": 2
+}

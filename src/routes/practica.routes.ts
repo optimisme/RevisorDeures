@@ -87,12 +87,23 @@ export const deleteCriteri = async (req: Request, res: Response) => {
   }
 };
 
+export const getCriterisPerPractica = async (req: Request, res: Response) => {
+  try {
+    const { practicaId } = req.params;
+    const criteris = await criteriumService.llistar(practicaId);
+    return res.json(criteris);
+  } catch {
+    return res.status(500).json({ error: 'Error intern' });
+  }
+};
+
 router.post('/practiques', createPractica);
 router.get('/practiques', getLlistatPractiques);
 router.get('/practiques/:id', getPractica);
 router.delete('/practiques/:id', deletePractica);
 
 router.post('/practiques/:practicaId/criteris', addCriteri);
+router.get('/practiques/:practicaId/criteris', getCriterisPerPractica);
 router.get('/criteris/:id', getCriteri);
 router.delete('/criteris/:id', deleteCriteri);
 

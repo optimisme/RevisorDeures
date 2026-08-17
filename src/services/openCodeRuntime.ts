@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const execAsync = promisify(exec);
@@ -11,24 +11,52 @@ export interface OpenCodeResult {
   feedback: string;
 }
 
+export interface OpenCodeConfig {
+  provider: string;
+  model: string;
+  baseURL: string;
+  context: number;
+  output: number;
+  reasoning: boolean;
+  timeout: number;
+  maxRetries: number;
+}
+
 export class OpenCodeRuntimeService {
+  private config: OpenCodeConfig;
   private configPath: string;
 
   constructor() {
     this.configPath = join(__dirname, '..', '..', 'runtime', 'opencode.json');
+    this.config = this.loadConfig();
+  }
+
+  private loadConfig(): OpenCodeConfig {
+    if (existsSync(this.configPath)) {
+      return JSON.parse(readFileSync(this.configPath, 'utf-8'));
+    }
+    return {
+      provider: 'openai',
+      model: 'gpt-4',
+      baseURL: '',
+      context: 65536,
+      output: 8192,
+      reasoning: false,
+      timeout: 300000,
+      maxRetries: 2,
+    };
   }
 
   async runReview(
     repoPath: string,
     criteriaText: string,
     practiceId: string,
-    criteriaId: string
+    criteriaId: string,
+    attempt: number = 0
   ): Promise<OpenCodeResult> {
     try {
-      const config = JSON.parse(readFileSync(this.configPath, 'utf-8'));
-
       const prompt = [
-        `Pràctica: ${practiceId}`,
+        `Practica: ${practiceId}`,
         `Criteri: ${criteriaId}`,
         `Criteri: ${criteriaText}`,
         '',
@@ -39,7 +67,7 @@ export class OpenCodeRuntimeService {
         `opencode eval --prompt "${prompt}" --path ${repoPath}`,
         {
           cwd: repoPath,
-          timeout: config.timeout || 300000,
+          timeout: this.config.timeout,
         }
       );
 
@@ -49,7 +77,7 @@ export class OpenCodeRuntimeService {
           return parsed as OpenCodeResult;
         }
       } catch {
-        // Parse error, return fallback
+        // Parse error
       }
 
       return {
@@ -58,6 +86,10 @@ export class OpenCodeRuntimeService {
         feedback: 'Review incomplete',
       };
     } catch (err: any) {
+      if (attempt < this.config.maxRetries) {
+        return this.runReview(repoPath, criteriaText, practiceId, criteriaId, attempt + 1);
+      }
+
       return {
         status: 'NEEDS_REVIEW',
         evidence: [err.message || 'Unknown error'],

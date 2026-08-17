@@ -9,8 +9,8 @@ import {
 const router = Router();
 
 router.post('/submit', submitEntrega);
-router.get('/:id', getEntrega);
 router.get('/:practicaId', getLlistatEntregues);
+router.get('/:id', getEntrega);
 router.post('/:id/validar', validarEntrega);
 
 export default router;

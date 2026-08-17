@@ -52,14 +52,14 @@ class App {
     }
 
     container.innerHTML = practiques.map(p => `
-      <div class="practica-card" data-id="${p.id}">
+      <div class="practica-card" data-id="${p.id}" onclick="app.mostrarDetallPractica('${p.id}')">
         <div class="card-header">
           <h3>${p.nom}</h3>
           <div>
-            <button class="btn btn-secondary btn-sm" onclick="app.editarPractica('${p.id}')">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); app.editarPractica('${p.id}')">
               Editar
             </button>
-            <button class="btn btn-danger btn-sm" onclick="app.eliminarPractica('${p.id}')">
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); app.eliminarPractica('${p.id}')">
               Eliminar
             </button>
           </div>

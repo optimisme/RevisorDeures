@@ -16,16 +16,18 @@ app.use('/api/practices', practiceRoutes);
 app.use('/api/entregues', entregaRoutes);
 app.use('/api', practicaRoutes);
 
-app.get('/', (req, res) => {
+app.get('/', (req: any, res: any) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.get('/api', (req, res) => {
+app.get('/api', (req: any, res: any) => {
   res.json({ message: 'RevisorDeures API', version: '1.0.0' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
 
 export default app;

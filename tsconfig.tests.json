@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM"],
+    "rootDir": "./",
+    "types": ["jest", "puppeteer"]
+  },
+  "include": ["tests/**/*"],
+  "exclude": ["node_modules", "dist", "src"]
+}

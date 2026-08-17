@@ -1,5 +1,7 @@
 import prisma from './prisma';
 import { entregaSchema } from '../validations/schemas';
+import { openCodeRuntimeService } from './openCodeRuntime';
+import { resultatCriteriService } from './resultat.service';
 
 export interface EntregaCreateInput {
   urlRepo: string;
@@ -45,6 +47,53 @@ export class EntregaService {
       where: { practicaId: perPracticaId, urlRepo },
       include: { resultats: { include: { criteri: true } } },
     });
+  }
+
+  async validarEntrega(entregaId: string, repoPath: string) {
+    const entrega = await prisma.entrega.findUnique({
+      where: { id: entregaId },
+      include: { practica: { include: { criteri: true } } },
+    });
+
+    if (!entrega) {
+      throw new Error('Entrega no trobada');
+    }
+
+    await this.actualitzarEstat(entregaId, 'VALIDATING');
+
+    const resultats = [];
+
+    for (const criteri of entrega.practica.criteri) {
+      const resultat = await openCodeRuntimeService.runReview(
+        repoPath,
+        criteri.text,
+        entrega.practicaId,
+        criteri.id
+      );
+
+      await resultatCriteriService.crear(
+        entregaId,
+        criteri.id,
+        {
+          status: resultat.status,
+          feedback: resultat.feedback,
+          evidencia: resultat.evidence?.join('\n'),
+        }
+      );
+
+      resultats.push(resultat);
+    }
+
+    const teFail = resultats.some((r) => r.status === 'FAIL');
+    const teNeedsReview = resultats.some((r) => r.status === 'NEEDS_REVIEW');
+
+    let estatFinal = 'COMPLETED';
+    if (teFail) estatFinal = 'FAILED';
+    else if (teNeedsReview) estatFinal = 'NEEDS_REVIEW';
+
+    await this.actualitzarEstat(entregaId, estatFinal);
+
+    return this.obtenir(entregaId);
   }
 }
 

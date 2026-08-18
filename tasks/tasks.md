@@ -206,7 +206,7 @@ T002
 
 ## Fase 2: Servidor Express
 
-### [pending] T007 — Crear `server.js` esquelet amb Express
+### [in-progress] T007 — Crear `server.js` esquelet amb Express
 
 **Objectiu**
 Crear el punt d'entrada de l'aplicació Express.

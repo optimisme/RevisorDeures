@@ -33,7 +33,7 @@
           "attachment": true,
           "temperature": true,
           "limit": {
-            "context": 65536,
+            "context": 131072,
             "output": 8192
           },
           "tool_call": true,
@@ -79,12 +79,12 @@
   },
   "model": "ieti-agents/active-model",
   "mcp": {
-    "puppeteer": {
+    "playwright": {
       "type": "local",
       "command": [
         "npx",
         "-y",
-        "@hisma/server-puppeteer"
+        "@playwright/mcp"
       ],
       "enabled": true
     },

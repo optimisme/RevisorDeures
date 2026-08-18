@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestió de Pràctiques — RevisorDeures</title>  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Gestió de Pràctiques</h1>
+    <div class="header-actions">
+      <a href="/admin" class="nav-link">← Tornar a l'administració</a>
+      <button class="logout-btn" id="logoutBtn">Tanca sessió</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Pràctiques disponibles</h2>
+      <button class="btn-primary" id="addBtn">+ Afegir Pràctica</button>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Títol</th>
+            <th>Criteris</th>
+            <th>Data de creació</th>
+            <th>Accions</th>
+          </tr>
+        </thead>
+        <tbody id="practiquesTableBody">
+          <tr>
+            <td colspan="4" class="empty-state">Carregant pràctiques...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal per afegir pràctica -->
+  <div class="modal" id="addModal">
+    <div class="modal-content">
+      <h3>Afegir nova pràctica</h3>
+      <div class="error-message" id="formError"></div>
+      <form id="addForm">
+        <div class="form-group">
+          <label for="titol">Títol *</label>
+          <input type="text" id="titol" required minlength="2">
+        </div>
+        <div class="form-group">
+          <label for="criteria">Criteris d'avaluació</label>
+          <textarea id="criteria" placeholder="Descriu els criteris d'avaluació de la pràctica..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelBtn">Cancel·lar</button>
+          <button type="submit" class="btn-primary">Desa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal per editar pràctica -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3>Edita la pràctica</h3>
+      <div class="error-message" id="editFormError"></div>
+      <form id="editForm">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+          <label for="editTitol">Títol *</label>
+          <input type="text" id="editTitol" required minlength="2">
+        </div>
+        <div class="form-group">
+          <label for="editCriteria">Criteris d'avaluació</label>
+          <textarea id="editCriteria" placeholder="Descrius els criteris d'avaluació..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelEditBtn">Cancel·lar</button>
+          <button type="submit" class="btn-primary">Desa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const practiquesTableBody = document.getElementById('practiquesTableBody');
+    const addModal = document.getElementById('addModal');
+    const editModal = document.getElementById('editModal');
+    const addForm = document.getElementById('addForm');
+    const editForm = document.getElementById('editForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    const formError = document.getElementById('formError');
+    const editFormError = document.getElementById('editFormError');
+
+    function showAlert(element, message) {
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => { element.style.display = 'none'; }, 3000);
+    }
+
+    function checkAuth() {
+      return fetch('/api/auth/session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.rol !== 'admin') {
+            window.location.href = '/';
+          }
+          return data;
+        });
+    }
+
+    function loadPractiques() {
+      return fetch('/api/practiques', { credentials: 'include' })
+        .then(res => {
+          if (res.status === 401 || res.status === 403) {
+            window.location.href = '/';
+          }
+          return res.json();
+        })
+        .then(practiques => {
+          practiquesTableBody.innerHTML = '';
+          if (practiques.length === 0) {
+            practiquesTableBody.innerHTML = '<tr><td colspan="4" class="empty-state">No hi ha pràctiques registrades. Fes clic a "Afegir Pràctica" per crear-ne una.</td></tr>';
+            return;
+          }
+          practiques.forEach(practica => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = \`
+              <td>\${practica.titol}</td>
+              <td>\${practica.criteria || '<span class="empty-state">Sense criteris</span>'}</td>
+              <td>\${new Date(practica.created_at).toLocaleDateString('ca-ES')}</td>
+              <td class="actions">
+                <button class="btn-action btn-edit" data-id="\${practica.id}" onclick="editPractica(\${practica.id})">Edita</button>
+                <button class="btn-action btn-delete" data-id="\${practica.id}" onclick="confirmDelete(\${practica.id})">Esborrar</button>
+              </td>
+            \`;
+            practiquesTableBody.appendChild(tr);
+          });
+        });
+    }
+
+    function confirmDelete(id) {
+      if (confirm('Segur que vols esborrar aquesta pràctica? Aquesta acció no es pot desfer.')) {
+        deletePractica(id);
+      }
+    }
+
+    function deletePractica(id) {
+      return fetch('/api/practiques/' + id, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (res.status === 404) {
+          showAlert(errorMessage, 'Pràctica no trobada');
+          return;
+        }
+        showAlert(successMessage, 'Pràctica esborrada correctament');
+        loadPractiques();
+      })
+      .catch(err => {
+        showAlert(errorMessage, 'Error esborrant pràctica');
+        console.error(err);
+      });
+    }
+
+    function editPractica(id) {
+      fetch('/api/practiques/' + id, { credentials: 'include' })
+        .then(res => res.json())
+        .then(practica => {
+          document.getElementById('editId').value = practica.id;
+          document.getElementById('editTitol').value = practica.titol;
+          document.getElementById('editCriteria').value = practica.criteria || '';
+          editModal.classList.add('active');
+        })
+        .catch(err => {
+          showAlert(errorMessage, 'Error carregant pràctica');
+          console.error(err);
+        });
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+        window.location.href = '/';
+      });
+    });
+
+    // Modal per afegir
+    document.getElementById('addBtn').addEventListener('click', () => {
+      addModal.classList.add('active');
+      formError.style.display = 'none';
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      addModal.classList.remove('active');
+    });
+
+    addModal.addEventListener('click', (e) => {
+      if (e.target === addModal) {
+        addModal.classList.remove('active');
+      }
+    });
+
+    // Submit form per afegir
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      formError.style.display = 'none';
+
+      const titol = document.getElementById('titol').value;
+      const criteria = document.getElementById('criteria').value;
+
+      fetch('/api/practiques', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titol, criteria })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (res.status >= 400) {
+          showAlert(formError, data.error || 'Error creant pràctica');
+          return;
+        }
+        showAlert(successMessage, 'Pràctica creada correctament');
+        addModal.classList.remove('active');
+        addForm.reset();
+        loadPractiques();
+      })
+      .catch(err => {
+        showAlert(formError, 'Error de connexió');
+        console.error(err);
+      });
+    });
+
+    // Modal per editar
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+      editModal.classList.remove('active');
+    });
+
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) {
+        editModal.classList.remove('active');
+      }
+    });
+
+    // Submit form per editar
+    editForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      editFormError.style.display = 'none';
+
+      const id = parseInt(document.getElementById('editId').value);
+      const titol = document.getElementById('editTitol').value;
+      const criteria = document.getElementById('editCriteria').value;
+
+      fetch('/api/practiques/' + id, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titol, criteria })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (res.status >= 400) {
+          showAlert(editFormError, data.error || 'Error actualitzant pràctica');
+          return;
+        }
+        showAlert(successMessage, 'Pràctica actualitzada correctament');
+        editModal.classList.remove('active');
+        editForm.reset();
+        loadPractiques();
+      })
+      .catch(err => {
+        showAlert(editFormError, 'Error de connexió');
+        console.error(err);
+      });
+    });
+
+    // Inicialitzar
+    checkAuth().then(() => loadPractiques());
+  </script>
+</body>
+</html>

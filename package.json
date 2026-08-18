@@ -1,36 +1,24 @@
 {
-  "name": "revisordeures",
+  "name": "revisor-deures",
   "version": "1.0.0",
-  "description": "Aplicació web per a la revisió de pràctiques amb criteris d'acceptació",
-  "main": "dist/index.js",
+  "description": "Server web per gestionar la revisió de pràctiques i entregues d'alumnes amb valoració automàtica",
+  "main": "server/index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js",
-    "test": "jest",
-    "test:puppeteer": "jest tests/puppeteer",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "start": "node server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "@prisma/client": "^5.10.0",
-    "zod": "^3.23.0",
-    "dotenv": "^16.4.5"
+    "@playwright/test": "^1.62.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "express-session": "^1.17.0",
+    "sql.js": "^1.10.0"
   },
+  "author": "RevisorDeures Team",
+  "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/express": "^4.17.21",
-    "@types/node": "^20.11.0",
-    "ts-node": "^10.9.2",
-    "prisma": "^5.10.0",
-    "@types/jest": "^29.5.12",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
-    "puppeteer": "^22.0.0"
+    "playwright": "^1.62.1"
   }
 }

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestió d'Alumnes — RevisorDeures</title>  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Gestió d'Alumnes</h1>
+    <div class="header-actions">
+      <a href="/admin" class="nav-link">← Tornar a l'administració</a>
+      <button class="logout-btn" id="logoutBtn">Tanca sessió</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Alumnes registrats</h2>
+      <button class="btn-primary" id="addBtn">+ Afegir Alumne</button>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Data de creació</th>
+            <th>Accions</th>
+          </tr>
+        </thead>
+        <tbody id="alumnesTableBody">
+          <tr>
+            <td colspan="4" class="empty-state">Carregant alumnes...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal per afegir alumne -->
+  <div class="modal" id="addModal">
+    <div class="modal-content">
+      <h3>Afegir nou alumne</h3>
+      <div class="error-message" id="formError"></div>
+      <form id="addForm">
+        <div class="form-group">
+          <label for="nom">Nom complet *</label>
+          <input type="text" id="nom" required minlength="2">
+        </div>
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Contrasenya *</label>
+          <input type="password" id="password" required minlength="4">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelBtn">Cancel·lar</button>
+          <button type="submit" class="btn-primary">Desa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const alumnesTableBody = document.getElementById('alumnesTableBody');
+    const addModal = document.getElementById('addModal');
+    const addForm = document.getElementById('addForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    const formError = document.getElementById('formError');
+
+    function showAlert(element, message) {
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => { element.style.display = 'none'; }, 3000);
+    }
+
+    function checkAuth() {
+      return fetch('/api/auth/session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.rol !== 'admin') {
+            window.location.href = '/';
+          }
+          return data;
+        });
+    }
+
+    function loadAlumnes() {
+      return fetch('/api/alumnes', { credentials: 'include' })
+        .then(res => {
+          if (res.status === 401 || res.status === 403) {
+            window.location.href = '/';
+          }
+          return res.json();
+        })
+        .then(alumnes => {
+          alumnesTableBody.innerHTML = '';
+          if (alumnes.length === 0) {
+            alumnesTableBody.innerHTML = '<tr><td colspan="4" class="empty-state">No hi ha alumnes registrats. Fes clic a "Afegir Alumne" per crear-ne un.</td></tr>';
+            return;
+          }
+          alumnes.forEach(alumne => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = \`
+              <td>\${alumne.nom}</td>
+              <td>\${alumne.email}</td>
+              <td>\${new Date(alumne.created_at).toLocaleDateString('ca-ES')}</td>
+              <td class="actions">
+                <a href="/admin/entregues?alumne=\${alumne.id}" class="btn-action btn-view">Entregues</a>
+                <button class="btn-action btn-delete" data-id="\${alumne.id}" onclick="confirmDelete(\${alumne.id})">Esborrar</button>
+              </td>
+            \`;
+            alumnesTableBody.appendChild(tr);
+          });
+        });
+    }
+
+    function confirmDelete(id) {
+      if (confirm('Segur que vols esborrar aquest alumne? Aquesta acció no es pot desfer.')) {
+        deleteAlumne(id);
+      }
+    }
+
+    function deleteAlumne(id) {
+      return fetch('/api/alumnes/' + id, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (res.status === 404) {
+          showAlert(errorMessage, 'Alumne no trobat');
+          return;
+        }
+        showAlert(successMessage, 'Alumne esborrat correctament');
+        loadAlumnes();
+      })
+      .catch(err => {
+        showAlert(errorMessage, 'Error esborrant alumne');
+        console.error(err);
+      });
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+        window.location.href = '/';
+      });
+    });
+
+    // Modal controls
+    document.getElementById('addBtn').addEventListener('click', () => {
+      addModal.classList.add('active');
+      formError.style.display = 'none';
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      addModal.classList.remove('active');
+    });
+
+    addModal.addEventListener('click', (e) => {
+      if (e.target === addModal) {
+        addModal.classList.remove('active');
+      }
+    });
+
+    // Submit form
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      formError.style.display = 'none';
+
+      const nom = document.getElementById('nom').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      fetch('/api/alumnes', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom, email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (res.status >= 400) {
+          showAlert(formError, data.error || 'Error creant alumne');
+          return;
+        }
+        showAlert(successMessage, 'Alumne creat correctament');
+        addModal.classList.remove('active');
+        addForm.reset();
+        loadAlumnes();
+      })
+      .catch(err => {
+        showAlert(formError, 'Error de connexió');
+        console.error(err);
+      });
+    });
+
+    // Inicialitzar
+    checkAuth().then(() => loadAlumnes());
+  </script>
+</body>
+</html>

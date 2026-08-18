@@ -7,3 +7,5 @@ dist/
 coverage/
 /tmp/
 .DS_Store
+
+settings.env

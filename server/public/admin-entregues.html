@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta d'Entregues — RevisorDeures</title>  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Gestió d'Entregues</h1>
+    <div class="header-actions">
+      <a href="/admin" class="nav-link">← Tornar a l'administració</a>
+      <button class="logout-btn" id="logoutBtn">Tanca sessió</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Consulta d'Entregues</h2>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <!-- Filtres -->
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filterAlumne">Filtrar per alumne</label>
+        <select id="filterAlumne">
+          <option value="">Tots els alumnes</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterPractica">Filtrar per pràctica</label>
+        <select id="filterPractica">
+          <option value="">Totes les pràctiques</option>
+        </select>
+      </div>
+      <button id="applyFiltersBtn" class="btn-primary">Aplicar filtres</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Alumne</th>
+            <th>Pràctica</th>
+            <th>URL del repositori</th>
+            <th>Estat</th>
+            <th>Revisada</th>
+            <th>Valoració</th>
+            <th>Accions</th>
+          </tr>
+        </thead>
+        <tbody id="entreguesTableBody">
+          <tr class="loading-row">
+            <td colspan="7">Carregant entregues...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const entreguesTableBody = document.getElementById('entreguesTableBody');
+    const filterAlumne = document.getElementById('filterAlumne');
+    const filterPractica = document.getElementById('filterPractica');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+
+    let alumnesList = [];
+    let practiquesList = [];
+    let entreguesData = [];
+
+    function showAlert(element, message) {
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => { element.style.display = 'none'; }, 3000);
+    }
+
+    function checkAuth() {
+      return fetch('/api/auth/session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.rol !== 'admin') {
+            window.location.href = '/';
+          }
+          return data;
+        });
+    }
+
+    function getStatusBadge(estat) {
+      const classes = {
+        'pendent': 'badge-pendent',
+        'processant': 'badge-processant',
+        'completada': 'badge-completada',
+        'error': 'badge-error'
+      };
+      const className = classes[estat] || 'badge-pendent';
+      return `<span class="badge ${className}">${estat}</span>`;
+    }
+
+    function getRevisadaBadge(revisada) {
+      if (revisada) {
+        return `<span class="badge badge-revisada">Sí</span>`;
+      }
+      return `<span class="badge badge-no">No</span>`;
+    }
+
+    function truncateUrl(url, maxLen) {
+      if (!url) return '—';
+      if (url.length <= maxLen) return url;
+      return url.substring(0, maxLen - 3) + '...';
+    }
+
+    function renderValueBox(valoracio) {
+      if (!valoracio) {
+        return '<span style="color:#9ca3af; font-size:0.85rem;">Sense valorar</span>';
+      }
+      let html = '<div class="value-box">';
+      html += `<p class="valor-estat"><strong>Estat:</strong> ${valoracio.estat || '—'}</p>`;
+      if (valoracio.resultat) {
+        html += `<p class="valor-resultat"><strong>Resultat:</strong> ${valoracio.resultat}</p>`;
+      }
+      if (valoracio.comentaris) {
+        html += `<p class="valor-comentaris"><strong>Comentaris:</strong> ${valoracio.comentaris}</p>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderEntregues(entregues) {
+      entreguesTableBody.innerHTML = '';
+      if (entregues.length === 0) {
+        entreguesTableBody.innerHTML = '<tr><td colspan="7" class="empty-state">No hi ha entregues que coincideixin amb els filtres.</td></tr>';
+        return;
+      }
+      entregues.forEach(entrega => {
+        const tr = document.createElement('tr');
+        const alumneName = (alumnesList.find(a => a.id === entrega.alumne_id) || {}).nom || '—';
+        const practicaTitle = (practiquesList.find(p => p.id === entrega.practica_id) || {}).titol || '—';
+
+        tr.innerHTML = `
+          <td>${alumneName}</td>
+          <td>${practicaTitle}</td>
+          <td><a href="${entrega.repo_url}" target="_blank" class="repo-url" title="${entrega.repo_url}">${truncateUrl(entrega.repo_url, 35)}</a></td>
+          <td>${getStatusBadge(entrega.estat)}</td>
+          <td>${getRevisadaBadge(entrega.revisada)}</td>
+          <td id="valoracio-${entrega.id}">Carregant...</td>
+          <td class="actions">
+            <button class="btn-action btn-review ${entrega.revisada ? '' : 'btn-revisada'}"
+                    data-id="${entrega.id}"
+                    data-revisada="${entrega.revisada}"
+                    onclick="marcarRevisada(${entrega.id}, this)"
+                    ${entrega.revisada ? 'disabled' : ''}>
+              ${entrega.revisada ? 'Revisada' : 'Marcar revisada'}
+            </button>
+          </td>
+        `;
+        entreguesTableBody.appendChild(tr);
+
+        // Carregar la valoració per aquesta entrega
+        carregarValoracio(entrega.id, `valoracio-${entrega.id}`);
+      });
+    }
+
+    function carregarValoracio(entregaId, targetId) {
+      fetch(`/api/valoracions/entrega/${entregaId}`, { credentials: 'include' })
+        .then(res => {
+          if (res.status === 404) {
+            document.getElementById(targetId).innerHTML = renderValueBox(null);
+            return null;
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.valoracio) {
+            document.getElementById(targetId).innerHTML = renderValueBox(data.valoracio);
+          } else {
+            document.getElementById(targetId).innerHTML = renderValueBox(null);
+          }
+        })
+        .catch(() => {
+          document.getElementById(targetId).innerHTML = renderValueBox(null);
+        });
+    }
+
+    function marcarRevisada(id, btnElement) {
+      btnElement.disabled = true;
+      btnElement.textContent = 'Processant...';
+
+      fetch(`/api/entregues/${id}/revisar`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (res.status >= 400) {
+            showAlert(errorMessage, data.error || 'Error marcant com revisada');
+            btnElement.disabled = false;
+            btnElement.textContent = 'Marcar revisada';
+            return;
+          }
+          showAlert(successMessage, 'Entrega marcada com revisada');
+          const tr = btnElement.closest('tr');
+          const celdes = tr.querySelectorAll('td');
+          celdes[4].innerHTML = '<span class="badge badge-revisada">Sí</span>';
+          celdes[6].innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">Revisada</span>';
+        })
+        .catch(err => {
+          showAlert(errorMessage, 'Error de connexió');
+          btnElement.disabled = false;
+          btnElement.textContent = 'Marcar revisada';
+          console.error(err);
+        });
+    }
+
+    function getFilteredEntregues() {
+      const alumneId = filterAlumne.value;
+      const practicaId = filterPractica.value;
+      let url = '/api/entregues?';
+      if (alumneId) url += `alumne_id=${alumneId}&`;
+      if (practicaId) url += `practica_id=${practicaId}&`;
+      return fetch(url, { credentials: 'include' })
+        .then(res => {
+          if (res.status === 401 || res.status === 403) {
+            window.location.href = '/';
+          }
+          return res.json();
+        })
+        .then(data => {
+          entreguesData = data.entregues || [];
+          renderEntregues(entreguesData);
+        });
+    }
+
+    function loadAlumnes() {
+      return fetch('/api/alumnes', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          alumnesList = data;
+          alumnesList.forEach(alumne => {
+            const option = document.createElement('option');
+            option.value = alumne.id;
+            option.textContent = alumne.nom;
+            filterAlumne.appendChild(option);
+          });
+        });
+    }
+
+    function loadPractiques() {
+      return fetch('/api/practiques', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          practiquesList = data;
+          practiquesList.forEach(practica => {
+            const option = document.createElement('option');
+            option.value = practica.id;
+            option.textContent = practica.titol;
+            filterPractica.appendChild(option);
+          });
+        });
+    }
+
+    // Event listeners per filtres
+    filterAlumne.addEventListener('change', () => {});
+    filterPractica.addEventListener('change', () => {});
+
+    document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+      getFilteredEntregues();
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+        window.location.href = '/';
+      });
+    });
+
+    // Inicialitzar
+    checkAuth().then(() => {
+      Promise.all([loadAlumnes(), loadPractiques()])
+        .then(() => getFilteredEntregues())
+        .catch(err => {
+          console.error('Error inicialitzant pàgina:', err);
+        });
+    });
+  </script>
+</body>
+</html>

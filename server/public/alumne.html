@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El meu espai — RevisorDeures</title>  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>El meu espai — RevisorDeures</h1>
+    <button class="logout-btn" id="logoutBtn">Tanca sessió</button>
+  </div>
+
+  <div class="error-message" id="errorMessage"></div>
+  <div class="container" id="loading">
+    <p>Carregant...</p>
+  </div>
+
+  <div class="container" id="content" style="display: none;">
+    <h2 class="welcome">Benvingut/da al teu espai personal</h2>
+    <p class="welcome-sub">Gestiona les teves entregues i envia'n de noves.</p>
+    
+    <div class="cards">
+      <a href="/alumne/entregues" class="card">
+        <div class="card-icon">📋</div>
+        <h3>Les meves Entregues</h3>
+        <p>Consulta l'estat de les teves entregues</p>
+      </a>
+      
+      <a href="/alumne/enviar" class="card">
+        <div class="card-icon">📤</div>
+        <h3>Enviar Entrega</h3>
+        <p>Envia una nova entrega de pràctica</p>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Verificar sessió
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/auth/session', { credentials: 'include' });
+        const data = await response.json();
+
+        if (!data || data.rol !== 'alumne') {
+          window.location.href = '/';
+          return;
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+      } catch (error) {
+        window.location.href = '/';
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } finally {
+        window.location.href = '/';
+      }
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>

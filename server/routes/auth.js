@@ -50,6 +50,7 @@ router.post('/logout', (req, res) => {
 
 // GET /api/auth/session
 router.get('/session', (req, res) => {
+  console.log('Session check - sessionId:', req.sessionID, 'hasSession:', !!req.session, 'hasUser:', !!(req.session && req.session.user), 'userData:', JSON.stringify(req.session?.user));
   if (req.session && req.session.user) {
     res.json(req.session.user);
   } else {
@@ -62,6 +63,7 @@ module.exports = router;
 function requireAuth(roles) {
   return (req, res, next) => {
     if (!req.session || !req.session.user) {
+      console.log('requireAuth: no session or user - sessionId:', req.sessionID);
       return res.status(401).json({ error: 'Cal estar identificat' });
     }
     

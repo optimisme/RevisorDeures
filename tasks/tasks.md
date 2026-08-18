@@ -268,7 +268,7 @@ cap
 
 ## Fase 3: Base de dades
 
-### [pending] T009 — Crear `db.js` amb connexió SQLite i esquema
+### [in-progress] T009 — Crear `db.js` amb connexió SQLite i esquema
 
 **Objectiu**
 Inicialitzar SQLite amb les taules alumnes, practiques i entregues.

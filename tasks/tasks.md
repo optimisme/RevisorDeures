@@ -138,7 +138,7 @@ cap
 
 ---
 
-### [pending] T005 — Crear l'estructura de directoris
+### [done] T005 — Crear l'estructura de directoris
 
 **Objectiu**
 Crear totes les carpetes necessàries sota `server/`.

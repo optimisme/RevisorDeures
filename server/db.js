@@ -13,14 +13,18 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS practiques (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     titol TEXT NOT NULL,
     criterios TEXT NOT NULL,
-    github_url TEXT NOT NULL
+    github_url TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS entregues (
@@ -55,7 +59,7 @@ module.exports.alumnes = {
     return stmt.all();
   },
   findById: (id) => {
-    const stmt = prepare('SELECT id, email, name FROM alumnes WHERE id = ?');
+    const stmt = prepare('SELECT id, email, password_hash, name FROM alumnes WHERE id = ?');
     return stmt.get(id) || null;
   },
   findByEmail: (email) => {
@@ -173,3 +177,4 @@ module.exports.entregues = {
 };
 
 module.exports.db = db;
+module.exports.prepare = prepare;

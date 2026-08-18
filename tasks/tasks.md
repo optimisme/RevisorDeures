@@ -331,7 +331,7 @@ T008
 
 ---
 
-### [pending] T011 — Crear tests unitaris de db.js
+### [done] T011 — Crear tests unitaris de db.js
 
 **Objectiu**
 Tests unitaris per validar totes les funcions CRUD de db.js.
@@ -363,7 +363,7 @@ T008, T010
 
 ## Fase 4: Hash de contrasenyes
 
-### [pending] T012 — Crear `lib/hash.js` amb MD5
+### [done] T012 — Crear `lib/hash.js` amb MD5
 
 **Objectiu**
 Crear el mòdul d'encapsulament de hash MD5 per contrasenyes.
@@ -390,7 +390,7 @@ cap
 
 ---
 
-### [pending] T013 — Crear tests unitaris de hash.js
+### [done] T013 — Crear tests unitaris de hash.js
 
 **Objectiu**
 Tests unitaris per a `lib/hash.js`.

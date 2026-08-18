@@ -81,7 +81,7 @@ T001
 
 ---
 
-### [pending] T003 — Crear `settings.env` al servidor
+### [done] T003 — Crear `settings.env` al servidor
 
 **Objectiu**
 Definir `server/settings.env` amb les variables necessàries.

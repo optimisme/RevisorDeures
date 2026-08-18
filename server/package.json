@@ -16,5 +16,11 @@
     "cookie-parser": "^1.4.0",
     "better-sqlite3": "^13.0.0",
     "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "mocha": "^10.0.0",
+    "chai": "^4.3.0",
+    "supertest": "^6.3.0",
+    "puppeteer": "*"
   }
 }

@@ -171,7 +171,7 @@ cap
 
 ---
 
-### [pending] T006 — Instal·lar dependències de test i crear scripts
+### [done] T006 — Instal·lar dependències de test i crear scripts
 
 **Objectiu**
 Instal·lar mocha, chai, supertest i puppeteer com a devDependencies.

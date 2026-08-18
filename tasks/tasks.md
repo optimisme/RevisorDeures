@@ -206,7 +206,7 @@ T002
 
 ## Fase 2: Servidor Express
 
-### [in-progress] T007 — Crear `server.js` esquelet amb Express
+### [done] T007 — Crear `server.js` esquelet amb Express
 
 **Objectiu**
 Crear el punt d'entrada de l'aplicació Express.
@@ -268,7 +268,7 @@ cap
 
 ## Fase 3: Base de dades
 
-### [in-progress] T009 — Crear `db.js` amb connexió SQLite i esquema
+### [done] T009 — Crear `db.js` amb connexió SQLite i esquema
 
 **Objectiu**
 Inicialitzar SQLite amb les taules alumnes, practiques i entregues.
@@ -419,7 +419,7 @@ T008
 
 ## Fase 5: Middleware d'autorització
 
-### [pending] T014 — Crear `middleware/auth.js`
+### [done] T014 — Crear `middleware/auth.js`
 
 **Objectiu**
 Crear els middlewares d'autorització per admin i alumne.
@@ -457,7 +457,7 @@ cap
 
 ---
 
-### [pending] T015 — Crear tests unitaris del middleware auth
+### [done] T015 — Crear tests unitaris del middleware auth
 
 **Objectiu**
 Tests unitaris per `middleware/auth.js`.
@@ -488,7 +488,7 @@ T008
 
 ## Fase 6: Autenticació Admin
 
-### [pending] T016 — Rutes admin login i logout
+### [done] T016 — Rutes admin login i logout
 
 **Objectiu**
 Implementar login i logout d'administrador.
@@ -525,7 +525,7 @@ T011, T015
 
 ---
 
-### [pending] T017 — Protegir rutes admin amb requireAdmin
+### [done] T017 — Protegir rutes admin amb requireAdmin
 
 **Objectiu**
 Assegurar que rutes protegides requereixen sessió admin.

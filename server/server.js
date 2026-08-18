@@ -45,13 +45,25 @@ app.get('/', (req, res) => {
   res.json({ message: 'RevisorDeures API' });
 });
 
-// Rutes (encara per implementar)
-// const authRoutes = require('./routes/auth');
-// app.use('/api/auth', authRoutes);
+app.get('/check-session', (req, res) => {
+  res.json({
+    admin: req.session.admin,
+    studentId: req.session.studentId,
+    studentName: req.session.studentName,
+    studentEmail: req.session.studentEmail
+  });
+});
+
+// Rutes
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 
 const PORT = settings.PORT || 3000;
-const server = app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
 
 module.exports = app;

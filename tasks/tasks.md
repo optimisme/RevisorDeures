@@ -54,7 +54,7 @@ cap
 
 ---
 
-### [pending] T002 — Instal·lar dependències de producció
+### [done] T002 — Instal·lar dependències de producció
 
 **Objectiu**
 Instal·lar les dependències definides a T001.

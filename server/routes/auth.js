@@ -1,102 +1,82 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const { alumnes } = require('../db');
-const { comparePassword } = require('../lib/hash');
-const { requireAdmin, requireStudent } = require('../middleware/auth');
-
-function parseSettingsEnv() {
-  const content = fs.readFileSync(path.join(__dirname, '..', 'settings.env'), 'utf8');
-  const obj = {};
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const idx = trimmed.indexOf('=');
-      if (idx !== -1) {
-        obj[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
-      }
-    }
-  }
-  return obj;
-}
-
-const settings = parseSettingsEnv();
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 const router = express.Router();
+const alumnes = require('../db/alumnes');
+require('dotenv').config({ path: __dirname + '/../settings.env' });
 
-// Admin login
-router.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
+// POST /api/auth/login
+router.post('/login', (req, res) => {
+  const { usuari, password } = req.body;
   
-  if (username === settings.ADMIN_USER && password === settings.ADMIN_PASSWORD) {
-    req.session.admin = true;
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error intern' });
-      }
-      return res.json({ ok: true, redirect: '/admin' });
-    });
-  } else {
-    res.status(401).json({ error: 'Credencials incorrectes' });
+  if (!usuari || !password) {
+    return res.status(400).json({ error: 'Campus obligatoris: usuari, password' });
   }
-});
-
-// Admin logout
-router.post('/admin/logout', requireAdmin, (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      // If session already destroyed, still return success
-      return res.json({ ok: true, redirect: '/' });
+  
+  // Admin login
+  if (usuari === 'admin') {
+    if (password === process.env.SERVER_ADMIN_PWD) {
+      req.session.user = { id: 1, rol: 'admin', usuari: 'admin' };
+      req.session.save(() => {
+        return res.json({ rol: 'admin', usuari: 'admin' });
+      });
+      return;
     }
-    return res.json({ ok: true, redirect: '/' });
-  });
-});
-
-// Admin protected endpoint (prova)
-router.get('/admin/protected', requireAdmin, (req, res) => {
-  res.json({ ok: true, role: 'admin', session: req.session });
-});
-
-// Student login
-router.post('/student/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  if (!isValidEmail(email)) {
-    return res.status(400).json({ error: 'Email invàlid' });
   }
   
-  const alumne = alumnes.findByEmail(email);
+  // Alumne login
+  const alumne = alumnes.getByEmail(usuari);
   if (!alumne) {
     return res.status(401).json({ error: 'Credencials incorrectes' });
   }
   
-  if (!comparePassword(password, alumne.password_hash)) {
+  if (alumnes.hashPassword(password) !== alumne.password_hash) {
     return res.status(401).json({ error: 'Credencials incorrectes' });
   }
   
-  req.session.studentId = alumne.id;
-  req.session.studentName = alumne.name;
-  req.session.studentEmail = alumne.email;
-  req.session.save((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error intern' });
-    }
-    return res.json({ ok: true, redirect: '/alumne' });
+  req.session.user = { rol: 'alumne', alumne_id: alumne.id, nom: alumne.nom, email: alumne.email };
+  req.session.save(() => {
+    res.json({ rol: 'alumne', alumne_id: alumne.id, nom: alumne.nom, email: alumne.email });
   });
 });
 
-// Student logout
-router.post('/student/logout', requireStudent, (req, res) => {
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.json({ ok: true, redirect: '/' });
+      return res.status(500).json({ error: 'Error tancant sessió' });
     }
-    return res.json({ ok: true, redirect: '/' });
+    res.json({ message: 'Sessió tancada' });
   });
+});
+
+// GET /api/auth/session
+router.get('/session', (req, res) => {
+  if (req.session && req.session.user) {
+    res.json(req.session.user);
+  } else {
+    res.json(null);
+  }
 });
 
 module.exports = router;
+
+function requireAuth(roles) {
+  return (req, res, next) => {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Cal estar identificat' });
+    }
+    
+    req.user = req.session.user;
+    
+    if (!roles || roles.length === 0) {
+      return next();
+    }
+    
+    if (!roles.includes(req.session.user.rol)) {
+      return res.status(403).json({ error: 'No tens permís per aquesta acció' });
+    }
+    
+    return next();
+  };
+}
+
+module.exports.requireAuth = requireAuth;

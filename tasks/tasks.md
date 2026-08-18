@@ -241,7 +241,7 @@ cap
 
 ---
 
-### [pending] T008 — Crear tests bàsics del servidor
+### [done] T008 — Crear tests bàsics del servidor
 
 **Objectiu**
 Crear tests per validar que el servidor arrenca i respon correctament.

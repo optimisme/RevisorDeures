@@ -110,7 +110,7 @@ cap
 
 ---
 
-### [pending] T004 — Crear `.gitignore` per al projecte
+### [done] T004 — Crear `.gitignore` per al projecte
 
 **Objectiu**
 Assegurar que fitxers sensibles no van al version control.

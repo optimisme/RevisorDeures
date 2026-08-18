@@ -1,36 +1,9 @@
-# Dependencies
 node_modules/
-
-# Build output
-dist/
-
-# Database
+server/settings.env
+server/*.db
 *.db
-
-# Secrets
-.github-token
-
-# Environment
-.env
-.env.local
-settings.env
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*~
-
-# Runtime temp files
-*.tmp
-
-# Logs
-logs/
 *.log
-npm-debug.log*
-
-# OS files
+dist/
+coverage/
+/tmp/
 .DS_Store
-Thumbs.db
-
-settings.env

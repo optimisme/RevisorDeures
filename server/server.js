@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const db = require('./db');
 
 // Parse settings.env
 function loadSettings(envPath) {
@@ -38,6 +39,10 @@ app.use(session({
 // Health endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/', (req, res) => {
+  res.json({ message: 'RevisorDeures API' });
 });
 
 // Rutes (encara per implementar)

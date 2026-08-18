@@ -306,7 +306,7 @@ cap
 
 ---
 
-### [pending] T010 — Connexió de `db.js` a `server.js`
+### [done] T010 — Connexió de `db.js` a `server.js`
 
 **Objectiu**
 Assegurar que `server.js` inicialitza la base de dades en arrencar.
